@@ -7,10 +7,36 @@ use std::path;
 use std::path::PathBuf;
 
 fn main() {
-    let file = env::args().nth(1).unwrap();
-    let input_path = path::Path::new(&file);
+    let argument_path = env::args().nth(1).unwrap();
+    let input_path = path::Path::new(&argument_path);
     
-    convert_pdf_to_text(input_path);
+    if input_path.is_file() {
+        println!("File provided");
+        convert_pdf_to_text(input_path);
+    } else if input_path.is_dir() {
+        apply_to_files_in_directory(input_path, &convert_pdf_to_text);
+    } else {
+        println!("Invalid path provided");
+    }
+}
+
+fn apply_to_files_in_directory(input_path: &std::path::Path, f: &dyn Fn(&std::path::Path)) {
+        match std::fs::read_dir(input_path) {
+            Ok(entries) => {
+                for entry in entries {
+                match entry {
+                    Ok(entry) => {
+                        let path = entry.path();
+                        if path.is_file() {
+                            f(&path);
+                        }
+                    },
+                    Err(e) => eprintln!("Error: {}", e),
+                }
+            }
+            }
+            Err(e) => eprintln!("Error: {}", e),
+        }
 }
 
 fn convert_pdf_to_text(input_path: &std::path::Path) {
